@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🏪 SuperMarket Remastered</title>
+    <style>
+        :root {
+            --bg-dark: #0b3b2f;
+            --panel-bg: #FEF5E7;
+            --accent: #F3A738;
+            --text-dark: #2A2418;
+            --green: #27ae60;
+            --border-style: 2px solid #4A2E14;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #1a5f44 100%);
+            min-height: 100vh;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .game-wrapper {
+            max-width: 900px;
+            width: 100%;
+            background: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: var(--border-style);
+        }
+
+        /* HEADER TERPUSAT & RAPI */
+        .top-bar {
+            background: #2A2418;
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 60px 1fr 100px; /* Level | Uang | Upgrade */
+            align-items: center;
+            border-bottom: 4px solid var(--accent);
+            gap: 10px;
+        }
+
+        .level-tag {
+            background: var(--accent);
+            color: #fff;
+            padding: 5px;
+            font-weight: 900;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            text-align: center;
+            border: 1px solid #4A2E14;
+        }
+
+        .cash-container {
+            display: flex;
+            justify-content: center;
+        }
+
+        .cash-display {
+            background: #1E1912;
+            padding: 8px 20px;
+            border: 2px solid #F7D44A;
+            color: #FFD966;
+            font-weight: 900;
+            font-size: 1.2rem;
+            text-align: center;
+            border-radius: 8px;
+            box-shadow: inset 0 0 10px rgba(255,217,102,0.2);
+            min-width: 140px;
+        }
+
+        /* DASHBOARD */
+        .dashboard {
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard { grid-template-columns: 1fr; }
+            .top-bar { grid-template-columns: 50px 1fr 80px; padding: 10px; }
+            .cash-display { font-size: 1rem; padding: 6px 10px; min-width: 110px; }
+        }
+
+        .panel {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #ddd;
+        }
+
+        h2 { font-size: 1rem; margin-bottom: 12px; border-left: 4px solid var(--accent); padding-left: 8px; color: var(--text-dark); }
+
+        /* INPUTS & BUTTONS KOTAK */
+        select, input, button { border-radius: 4px; border: 1px solid #ccc; font-weight: bold; outline: none; }
+
+        .buy-controls { display: grid; grid-template-columns: 1fr 60px; gap: 8px; margin-bottom: 10px; }
+
+        .btn-main {
+            background: var(--green);
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #1C5A3A;
+            font-size: 0.9rem;
+        }
+
+        .btn-main:active { transform: translateY(2px); box-shadow: 0 1px 0 #1C5A3A; }
+
+        /* Refresh Button */
+        .refresh-area {
+            display: flex;
+            justify-content: center;
+            margin: 10px 15px;
+        }
+        .btn-refresh {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            cursor: pointer;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+        }
+        .btn-refresh:active { transform: scale(0.98); }
+
+        /* LISTS */
+        .row-card {
+            display: grid;
+            grid-template-columns: 30px 1fr 70px 60px;
+            align-items: center;
+            background: #fdfdfd;
+            padding: 8px;
+            border: 1px solid #eee;
+            margin-bottom: 5px;
+            gap: 10px;
+        }
+
+        .shelf-card {
+            background: #fff;
+            padding: 12px;
+            border: 1px solid #eee;
+            margin-bottom: 10px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .price-tag { display: flex; align-items: center; background: #eee; padding: 2px; }
+        .price-tag button { width: 32px; height: 32px; background: #333; color: white; border: none; cursor: pointer; font-size: 1.2rem; }
+        .price-tag span { width: 65px; text-align: center; font-weight: bold; font-size: 0.9rem; }
+
+        .info-sub { font-size: 0.8rem; color: #777; margin-top: 4px; }
+        .speed-val { color: #d35400; font-weight: bold; }
+
+        footer { background: #2A2418; color: #777; text-align: center; padding: 8px; font-size: 0.7rem; }
+        
+        /* Auto-save indicator kecil */
+        .save-badge {
+            position: fixed;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.6);
+            color: #0f0;
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-family: monospace;
+            pointer-events: none;
+            z-index: 999;
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-wrapper">
+    <div class="top-bar">
+        <div class="level-tag" id="storeLevelUI">Lv.1</div>
+        
+        <div class="cash-container">
+            <div class="cash-display" id="moneyUI">$50.00</div>
+        </div>
+
+        <button id="upgradeBtn" class="btn-main" style="background:#e67e22; padding: 6px 5px; font-size: 0.65rem; box-shadow: 0 3px 0 #a05a1a;">
+            UPGRADE<br>$<span id="upgradeCostUI">300</span>
+        </button>
+    </div>
+
+    <!-- AREA REFRESH (Dibawah Gudang dan Diatas Rak Toko) -->
+    <div class="refresh-area">
+        <button id="refreshDatabaseBtn" class="btn-refresh">🔄 Refresh Database & Sinkronisasi</button>
+    </div>
+
+    <div class="dashboard">
+        <div class="panel">
+            <h2>🛒 Grosir</h2>
+            <div class="buy-controls">
+<select id="productType">
+    <!-- Produk awal -->
+    <option value="susu">🥛 Susu ($48)</option>
+    <option value="roti">🍞 Roti ($70)</option>
+    <option value="telur">🥚 Telur ($90)</option>
+    <option value="soda">🥤 Soda ($60)</option>
+
+    <!-- Bunga -->
+    <option value="mawar">🌹 Mawar ($50)</option>
+    <option value="kembang_sepatu">🌺 Kembang Sepatu ($45)</option>
+    <option value="tulip">🌷 Tulip ($55)</option>
+    <option value="teratai">🪷 Teratai ($60)</option>
+    <option value="sakura">🌸 Sakura ($65)</option>
+    <option value="matahari">🌻 Bunga Matahari ($70)</option>
+
+    <!-- Tanaman -->
+    <option value="kaktus">🌵 Kaktus ($40)</option>
+    <option value="tanaman_hias">🪴 Tanaman Hias ($80)</option>
+
+    <!-- Sayuran -->
+    <option value="tomat">🍅 Tomat ($25)</option>
+    <option value="cabai">🌶️ Cabai ($30)</option>
+    <option value="wortel">🥕 Wortel ($20)</option>
+    <option value="ubi">🍠 Ubi ($35)</option>
+    <option value="bawang_bombay">🧅 Bawang Bombay ($28)</option>
+    <option value="jagung">🌽 Jagung ($15)</option>
+    <option value="brokoli">🥦 Brokoli ($22)</option>
+    <option value="mentimun">🥒 Mentimun ($18)</option>
+    <option value="sawi">🥬 Sawi ($12)</option>
+    <option value="paprika">🫑 Paprika ($32)</option>
+    <option value="alpukat">🥑 Alpukat ($45)</option>
+    <option value="terong">🍆 Terong ($20)</option>
+    <option value="bawang_putih">🧄 Bawang Putih ($25)</option>
+    <option value="kentang">🥔 Kentang ($20)</option>
+
+    <!-- Buah -->
+    <option value="stroberi">🍓 Stroberi ($40)</option>
+    <option value="ceri">🍒 Ceri ($55)</option>
+    <option value="apel">🍎 Apel ($35)</option>
+    <option value="semangka">🍉 Semangka ($60)</option>
+    <option value="peach">🍑 Peach ($38)</option>
+    <option value="jeruk">🍊 Jeruk ($30)</option>
+    <option value="mangga">🥭 Mangga ($45)</option>
+    <option value="nanas">🍍 Nanas ($42)</option>
+    <option value="pisang">🍌 Pisang ($25)</option>
+    <option value="lemon">🍋 Lemon ($28)</option>
+    <option value="melon">🍈 Melon ($50)</option>
+    <option value="pir">🍏 Pir ($32)</option>
+    <option value="kiwi">🥝 Kiwi ($35)</option>
+    <option value="zaitun">🫒 Zaitun ($48)</option>
+    <option value="blueberry">🫐 Blueberry ($50)</option>
+    <option value="anggur">🍇 Anggur ($52)</option>
+    <option value="kelapa">🥥 Kelapa ($30)</option>
+    <option value="kacang">🥜 Kacang ($25)</option>
+
+    <!-- Makanan Mentah -->
+    <option value="daging_asin">🥓 Daging Asin ($70)</option>
+    <option value="daging_sapi">🥩 Daging Sapi ($85)</option>
+    <option value="paha_ayam">🍗 Paha Ayam ($40)</option>
+    <option value="sayap_ayam">🍖 Sayap Ayam ($35)</option>
+
+    <!-- Makanan Olahan & Lainnya -->
+    <option value="roti_tawar">🍞 Roti Tawar ($25)</option>
+    <option value="croissant">🥐 Croissant ($30)</option>
+    <option value="bagel">🥯 Bagel ($28)</option>
+    <option value="waffle">🧇 Waffle ($35)</option>
+    <option value="pancake">🥞 Pancake ($32)</option>
+    <option value="keju">🧀 Keju ($45)</option>
+    <option value="burger">🍔 Burger ($40)</option>
+    <option value="hotdog">🌭 Hotdog ($35)</option>
+    <option value="sandwich">🥪 Sandwich ($30)</option>
+    <option value="pretzel">🥨 Pretzel ($25)</option>
+    <option value="kentang_goreng">🍟 Kentang Goreng ($20)</option>
+    <option value="pizza">🍕 Pizza ($60)</option>
+    <option value="taco">🌮 Taco ($35)</option>
+    <option value="burrito">🌯 Burrito ($40)</option>
+    <option value="salad">🥗 Salad ($28)</option>
+    <option value="nasi_goreng">🍛 Nasi Goreng ($25)</option>
+    <option value="mie">🍜 Mie ($15)</option>
+    <option value="sushi">🍣 Sushi ($70)</option>
+    <option value="takoyaki">🍡 Takoyaki ($45)</option>
+    <option value="onigiri">🍙 Onigiri ($20)</option>
+    <option value="es_krim">🍦 Es Krim ($30)</option>
+    <option value="kue">🍰 Kue ($50)</option>
+    <option value="donat">🍩 Donat ($25)</option>
+    <option value="kopi">☕ Kopi ($15)</option>
+    <option value="teh">🍵 Teh ($12)</option>
+
+    <!-- Elektronik -->
+    <option value="tv">📺 TV ($2000)</option>
+    <option value="radio">📻 Radio ($300)</option>
+    <option value="smartphone">📱 Smartphone ($3500)</option>
+    <option value="monitor">🖥️ Monitor ($1500)</option>
+    <option value="laptop">💻 Laptop ($5000)</option>
+    <option value="telepon">☎️ Telepon ($200)</option>
+    <option value="printer">🖨️ Printer ($800)</option>
+    <option value="mouse">🖱️ Mouse ($80)</option>
+</select>
+                <input type="number" id="cardAmount" value="1" min="1">
+            </div>
+            <button id="buyCardAction" class="btn-main" style="width: 100%;">BELI KARDUS</button>
+
+            <h2 style="margin-top: 20px; font-size: 0.9rem; color: #888;">📦 Gudang</h2>
+            <div id="inventoryContainer"></div>
+        </div>
+
+        <div class="panel">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>🏪 Rak Toko</h2>
+                <span id="capUI" style="font-weight: bold; color: #bbb; font-size: 0.85rem;">0/20</span>
+            </div>
+            <div id="shelfList"></div>
+        </div>
+    </div>
+
+    <footer>Ekonomi Sulit: Modal $50 | Gunakan Strategi Harga | Auto-Save Aktif</footer>
+</div>
+<div class="save-badge" id="saveIndicator">💾 Tersimpan</div>
+
+<script>
+// ==================== DATABASE PRODUK (LENGKAP) ====================
+const PRODUCT_CATALOG = {
+    // Produk awal
+    susu: { name: "Susu", cost: 48, units: 12, base: 4.5, icon: "🥛" },
+    roti: { name: "Roti", cost: 70, units: 20, base: 4.2, icon: "🍞" },
+    telur: { name: "Telur", cost: 90, units: 30, base: 3.8, icon: "🥚" },
+    soda: { name: "Soda", cost: 60, units: 24, base: 3.2, icon: "🥤" },
+
+    // Bunga
+    mawar: { name: "Mawar", cost: 50, units: 1, base: 15, icon: "🌹" },
+    kembang_sepatu: { name: "Kembang Sepatu", cost: 45, units: 1, base: 12, icon: "🌺" },
+    tulip: { name: "Tulip", cost: 55, units: 1, base: 18, icon: "🌷" },
+    teratai: { name: "Teratai", cost: 60, units: 1, base: 20, icon: "🪷" },
+    sakura: { name: "Sakura", cost: 65, units: 1, base: 22, icon: "🌸" },
+    matahari: { name: "Bunga Matahari", cost: 70, units: 1, base: 25, icon: "🌻" },
+
+    // Tanaman
+    kaktus: { name: "Kaktus", cost: 40, units: 1, base: 10, icon: "🌵" },
+    tanaman_hias: { name: "Tanaman Hias", cost: 80, units: 1, base: 30, icon: "🪴" },
+
+    // Sayuran
+    tomat: { name: "Tomat", cost: 25, units: 10, base: 3.5, icon: "🍅" },
+    cabai: { name: "Cabai", cost: 30, units: 5, base: 8, icon: "🌶️" },
+    wortel: { name: "Wortel", cost: 20, units: 8, base: 3, icon: "🥕" },
+    ubi: { name: "Ubi", cost: 35, units: 5, base: 8, icon: "🍠" },
+    bawang_bombay: { name: "Bawang Bombay", cost: 28, units: 6, base: 5, icon: "🧅" },
+    jagung: { name: "Jagung", cost: 15, units: 5, base: 4, icon: "🌽" },
+    brokoli: { name: "Brokoli", cost: 22, units: 4, base: 6, icon: "🥦" },
+    mentimun: { name: "Mentimun", cost: 18, units: 8, base: 2.5, icon: "🥒" },
+    sawi: { name: "Sawi", cost: 12, units: 10, base: 1.8, icon: "🥬" },
+    paprika: { name: "Paprika", cost: 32, units: 5, base: 7, icon: "🫑" },
+    alpukat: { name: "Alpukat", cost: 45, units: 4, base: 12, icon: "🥑" },
+    terong: { name: "Terong", cost: 20, units: 6, base: 4, icon: "🍆" },
+    bawang_putih: { name: "Bawang Putih", cost: 25, units: 8, base: 4, icon: "🧄" },
+    kentang: { name: "Kentang", cost: 20, units: 10, base: 2.5, icon: "🥔" },
+
+    // Buah
+    stroberi: { name: "Stroberi", cost: 40, units: 10, base: 5, icon: "🍓" },
+    ceri: { name: "Ceri", cost: 55, units: 12, base: 5.5, icon: "🍒" },
+    apel: { name: "Apel", cost: 35, units: 8, base: 5, icon: "🍎" },
+    semangka: { name: "Semangka", cost: 60, units: 1, base: 25, icon: "🍉" },
+    peach: { name: "Peach", cost: 38, units: 6, base: 7, icon: "🍑" },
+    jeruk: { name: "Jeruk", cost: 30, units: 8, base: 4.5, icon: "🍊" },
+    mangga: { name: "Mangga", cost: 45, units: 6, base: 8, icon: "🥭" },
+    nanas: { name: "Nanas", cost: 42, units: 1, base: 15, icon: "🍍" },
+    pisang: { name: "Pisang", cost: 25, units: 8, base: 4, icon: "🍌" },
+    lemon: { name: "Lemon", cost: 28, units: 6, base: 5, icon: "🍋" },
+    melon: { name: "Melon", cost: 50, units: 1, base: 18, icon: "🍈" },
+    pir: { name: "Pir", cost: 32, units: 6, base: 6, icon: "🍏" },
+    kiwi: { name: "Kiwi", cost: 35, units: 6, base: 6.5, icon: "🥝" },
+    zaitun: { name: "Zaitun", cost: 48, units: 10, base: 5, icon: "🫒" },
+    blueberry: { name: "Blueberry", cost: 50, units: 12, base: 5, icon: "🫐" },
+    anggur: { name: "Anggur", cost: 52, units: 12, base: 5, icon: "🍇" },
+    kelapa: { name: "Kelapa", cost: 30, units: 1, base: 12, icon: "🥥" },
+    kacang: { name: "Kacang", cost: 25, units: 15, base: 2, icon: "🥜" },
+
+    // Makanan Mentah
+    daging_asin: { name: "Daging Asin", cost: 70, units: 5, base: 18, icon: "🥓" },
+    daging_sapi: { name: "Daging Sapi", cost: 85, units: 4, base: 25, icon: "🥩" },
+    paha_ayam: { name: "Paha Ayam", cost: 40, units: 6, base: 8, icon: "🍗" },
+    sayap_ayam: { name: "Sayap Ayam", cost: 35, units: 6, base: 7, icon: "🍖" },
+
+    // Makanan Olahan & Lainnya (dll)
+    roti_tawar: { name: "Roti Tawar", cost: 25, units: 12, base: 2.5, icon: "🍞" },
+    croissant: { name: "Croissant", cost: 30, units: 6, base: 6, icon: "🥐" },
+    bagel: { name: "Bagel", cost: 28, units: 6, base: 5.5, icon: "🥯" },
+    waffle: { name: "Waffle", cost: 35, units: 4, base: 10, icon: "🧇" },
+    pancake: { name: "Pancake", cost: 32, units: 6, base: 6, icon: "🥞" },
+    keju: { name: "Keju", cost: 45, units: 8, base: 6.5, icon: "🧀" },
+    burger: { name: "Burger", cost: 40, units: 4, base: 12, icon: "🍔" },
+    hotdog: { name: "Hotdog", cost: 35, units: 5, base: 8, icon: "🌭" },
+    sandwich: { name: "Sandwich", cost: 30, units: 4, base: 9, icon: "🥪" },
+    pretzel: { name: "Pretzel", cost: 25, units: 5, base: 6, icon: "🥨" },
+    kentang_goreng: { name: "Kentang Goreng", cost: 20, units: 10, base: 3, icon: "🍟" },
+    pizza: { name: "Pizza", cost: 60, units: 1, base: 25, icon: "🍕" },
+    taco: { name: "Taco", cost: 35, units: 4, base: 10, icon: "🌮" },
+    burrito: { name: "Burrito", cost: 40, units: 3, base: 15, icon: "🌯" },
+    salad: { name: "Salad", cost: 28, units: 4, base: 8, icon: "🥗" },
+    nasi_goreng: { name: "Nasi Goreng", cost: 25, units: 5, base: 6, icon: "🍛" },
+    mie: { name: "Mie", cost: 15, units: 8, base: 2.5, icon: "🍜" },
+    sushi: { name: "Sushi", cost: 70, units: 8, base: 10, icon: "🍣" },
+    takoyaki: { name: "Takoyaki", cost: 45, units: 6, base: 8, icon: "🍡" },
+    onigiri: { name: "Onigiri", cost: 20, units: 5, base: 5, icon: "🍙" },
+    es_krim: { name: "Es Krim", cost: 30, units: 4, base: 9, icon: "🍦" },
+    kue: { name: "Kue", cost: 50, units: 1, base: 20, icon: "🍰" },
+    donat: { name: "Donat", cost: 25, units: 4, base: 7, icon: "🍩" },
+    kopi: { name: "Kopi", cost: 15, units: 10, base: 2, icon: "☕" },
+    teh: { name: "Teh", cost: 12, units: 10, base: 1.8, icon: "🍵" },
+
+    // Elektronik
+    tv: { name: "TV", cost: 2000, units: 1, base: 2500, icon: "📺" },
+    radio: { name: "Radio", cost: 300, units: 1, base: 450, icon: "📻" },
+    smartphone: { name: "Smartphone", cost: 3500, units: 1, base: 4200, icon: "📱" },
+    monitor: { name: "Monitor", cost: 1500, units: 1, base: 1900, icon: "🖥️" },
+    laptop: { name: "Laptop", cost: 5000, units: 1, base: 6200, icon: "💻" },
+    telepon: { name: "Telepon", cost: 200, units: 1, base: 280, icon: "☎️" },
+    printer: { name: "Printer", cost: 800, units: 1, base: 1050, icon: "🖨️" },
+    mouse: { name: "Mouse", cost: 80, units: 1, base: 120, icon: "🖱️" }
+};
+
+    let playerMoney = 5000.0;
+    let storeLevel = 1;
+    let cardStock = {};
+    let shelf = {};
+    let maxCap = 20;
+    
+    // ==================== INISIALISASI DINAMIS ====================
+    function initializeDynamicData() {
+        // Inisialisasi cardStock untuk semua produk di catalog
+        const newCardStock = {};
+        for(let id in PRODUCT_CATALOG) {
+            if(cardStock[id] === undefined) {
+                newCardStock[id] = 0;
+            } else {
+                newCardStock[id] = cardStock[id];
+            }
+        }
+        cardStock = newCardStock;
+        
+        // Inisialisasi shelf untuk semua produk
+        const newShelf = {};
+        for(let id in PRODUCT_CATALOG) {
+            if(shelf[id] === undefined) {
+                newShelf[id] = { stock: 0, price: PRODUCT_CATALOG[id].base * 1.2, timerId: null };
+            } else {
+                newShelf[id] = { ...shelf[id], timerId: null };
+            }
+        }
+        shelf = newShelf;
+    }
+    
+    // ==================== SISTEM DATABASE & AUTO SAVE ====================
+    function saveGameToDB() {
+        try {
+            const saveData = {
+                playerMoney: playerMoney,
+                storeLevel: storeLevel,
+                cardStock: { ...cardStock },
+                shelf: {},
+                maxCap: maxCap,
+                version: "2.2"
+            };
+            
+            for(let id in shelf) {
+                saveData.shelf[id] = { stock: shelf[id].stock, price: shelf[id].price };
+            }
+            
+            localStorage.setItem("SuperMarketTycoon_Save", JSON.stringify(saveData));
+            const indicator = document.getElementById('saveIndicator');
+            if(indicator) {
+                indicator.style.opacity = '1';
+                indicator.innerText = '💾 Tersimpan!';
+                setTimeout(() => {
+                    if(indicator) indicator.innerText = '💾 Auto-Save';
+                }, 1200);
+            }
+        } catch(e) { console.warn("Auto save gagal", e); }
+    }
+    
+    function loadGameFromDB() {
+        const raw = localStorage.getItem("SuperMarketTycoon_Save");
+        if(!raw) return false;
+        try {
+            const data = JSON.parse(raw);
+            if(data.version && (data.version === "2.1" || data.version === "2.2")) {
+                playerMoney = data.playerMoney;
+                storeLevel = data.storeLevel;
+                maxCap = data.maxCap;
+                
+                // Load cardStock
+                if(data.cardStock) {
+                    cardStock = { ...data.cardStock };
+                }
+                
+                // Load shelf
+                if(data.shelf) {
+                    for(let id in data.shelf) {
+                        if(shelf[id]) {
+                            shelf[id].stock = data.shelf[id].stock;
+                            shelf[id].price = data.shelf[id].price;
+                        }
+                    }
+                }
+                return true;
+            }
+        } catch(e) { console.warn("Gagal load save", e); }
+        return false;
+    }
+    
+    function clearAllTimers() {
+        for(let id in shelf) {
+            if(shelf[id].timerId) {
+                clearInterval(shelf[id].timerId);
+                clearTimeout(shelf[id].timerId);
+                shelf[id].timerId = null;
+            }
+        }
+    }
+    
+    function restartAllSelling() {
+        for(let id in shelf) {
+            if(shelf[id].stock > 0) {
+                startSelling(id);
+            }
+        }
+    }
+    
+    function startSelling(id) {
+        if(shelf[id].timerId) {
+            clearTimeout(shelf[id].timerId);
+            shelf[id].timerId = null;
+        }
+        if(shelf[id].stock <= 0) return;
+        
+        function sellStep() {
+            if(shelf[id].stock > 0) {
+                shelf[id].stock--;
+                playerMoney += shelf[id].price;
+                updateUI();
+                if(shelf[id].stock > 0) {
+                    const speedSec = calculateSpeed(id);
+                    shelf[id].timerId = setTimeout(() => {
+                        sellStep();
+                    }, speedSec * 1000);
+                } else {
+                    shelf[id].timerId = null;
+                }
+            } else {
+                shelf[id].timerId = null;
+            }
+        }
+        
+        const firstDelay = calculateSpeed(id) * 1000;
+        shelf[id].timerId = setTimeout(() => {
+            sellStep();
+        }, firstDelay);
+    }
+    
+    function calculateSpeed(id) {
+        const p = PRODUCT_CATALOG[id];
+        if(!p) return 5;
+        let ratio = shelf[id].price / p.base;
+        let speed = 3.5 * Math.pow(ratio, 2.8); 
+        return Math.min(60, Math.max(0.5, speed));
+    }
+    
+    function updateUI() {
+        document.getElementById('moneyUI').innerText = '$' + formatMoney(playerMoney);
+        document.getElementById('storeLevelUI').innerText = `Lv.${storeLevel}`;
+        
+        // Update Gudang (cardStock)
+        const invContainer = document.getElementById('inventoryContainer');
+        invContainer.innerHTML = '';
+        for(let id in cardStock) {
+            if(cardStock[id] > 0 && PRODUCT_CATALOG[id]) {
+                invContainer.innerHTML += `
+                <div class="row-card">
+                    <span>${PRODUCT_CATALOG[id].icon}</span>
+                    <span style="font-weight:bold;">${PRODUCT_CATALOG[id].name}</span>
+                    <span style="color:#666; font-size:0.75rem;">${cardStock[id]} Box</span>
+                    <button style="background:var(--accent); border:none; padding:4px; font-size:0.7rem; cursor:pointer;" onclick="openBox('${id}')">BUKA</button>
+                </div>`;
+            }
+        }
+
+        // Update Rak Toko (shelf)
+        const shelfContainer = document.getElementById('shelfList');
+        shelfContainer.innerHTML = '';
+        let total = 0;
+        for(let id in shelf) {
+            if(!PRODUCT_CATALOG[id]) continue;
+            total += shelf[id].stock;
+            const s = shelf[id];
+            const speed = s.stock > 0 ? calculateSpeed(id).toFixed(1) : 0;
+            shelfContainer.innerHTML += `
+                <div class="shelf-card">
+                    <div>
+                        <div style="font-weight:bold; font-size:0.95rem;">${PRODUCT_CATALOG[id].icon} ${PRODUCT_CATALOG[id].name}</div>
+                        <div class="info-sub">Stok: ${s.stock} | <span class="speed-val">⏱️ ${speed}s</span></div>
+                    </div>
+                    <div class="price-tag">
+                        <button onclick="changePrice('${id}', -0.1)">-</button>
+                        <span>$${s.price.toFixed(2)}</span>
+                        <button onclick="changePrice('${id}', 0.1)">+</button>
+                    </div>
+                </div>`;
+        }
+        
+        // Kapasitas maksimal 1.000.000.000
+        const maxCapDisplay = Math.min(maxCap, 1000000000);
+        document.getElementById('capUI').innerHTML = `${total}/${maxCapDisplay}`;
+        
+        const upgradeCost = storeLevel * 300;
+        document.getElementById('upgradeCostUI').innerText = formatMoney(upgradeCost);
+        
+        saveGameToDB();
+    }
+    
+    window.openBox = (id) => {
+        const u = PRODUCT_CATALOG[id].units;
+        let total = 0; 
+        for(let i in shelf) total += shelf[i].stock;
+        const maxAllowed = Math.min(maxCap, 1000000000);
+        if(total + u > maxAllowed) {
+            alert(`Rak Penuh! Kapasitas maksimal ${maxAllowed}`);
+            return;
+        }
+        if(cardStock[id] <= 0) return;
+        cardStock[id]--;
+        shelf[id].stock += u;
+        startSelling(id);
+        updateUI();
+    };
+
+    window.changePrice = (id, delta) => {
+        shelf[id].price = Math.max(0.1, shelf[id].price + delta);
+        if(shelf[id].stock > 0) {
+            startSelling(id);
+        }
+        updateUI();
+    };
+    
+    // ==================== REFRESH DATABASE ====================
+    function refreshDatabase() {
+        // Simpan state lama yang penting
+        const oldCardStock = { ...cardStock };
+        const oldShelf = {};
+        for(let id in shelf) {
+            if(shelf[id]) {
+                oldShelf[id] = { stock: shelf[id].stock, price: shelf[id].price };
+            }
+        }
+        const oldMoney = playerMoney;
+        const oldLevel = storeLevel;
+        const oldMaxCap = maxCap;
+        
+        // Hentikan semua timer
+        clearAllTimers();
+        
+        // Inisialisasi ulang data dengan mempertahankan stok dan harga yang ada
+        // Tapi pastikan semua produk baru dari catalog masuk
+        const newCardStock = {};
+        const newShelf = {};
+        
+        for(let id in PRODUCT_CATALOG) {
+            // Pertahankan stok kardus yang ada
+            if(oldCardStock[id] !== undefined) {
+                newCardStock[id] = oldCardStock[id];
+            } else {
+                newCardStock[id] = 0;
+            }
+            
+            // Pertahankan stok rak dan harga yang ada
+            if(oldShelf[id] !== undefined) {
+                newShelf[id] = { 
+                    stock: oldShelf[id].stock, 
+                    price: oldShelf[id].price,
+                    timerId: null 
+                };
+            } else {
+                newShelf[id] = { 
+                    stock: 0, 
+                    price: PRODUCT_CATALOG[id].base * 1.2,
+                    timerId: null 
+                };
+            }
+        }
+        
+        cardStock = newCardStock;
+        shelf = newShelf;
+        playerMoney = oldMoney;
+        storeLevel = oldLevel;
+        maxCap = oldMaxCap;
+        
+        // Pastikan maxCap tidak melebihi 1.000.000.000
+        if(maxCap > 1000000000) maxCap = 1000000000;
+        
+        // Update UI
+        updateUI();
+        
+        // Restart penjualan
+        restartAllSelling();
+        
+        // Tampilkan notifikasi
+        const indicator = document.getElementById('saveIndicator');
+        if(indicator) {
+            indicator.innerText = '🔄 Database Refresh!';
+            indicator.style.opacity = '1';
+            setTimeout(() => {
+                if(indicator) indicator.innerText = '💾 Auto-Save';
+            }, 2000);
+        }
+        
+        // Simpan setelah refresh
+        saveGameToDB();
+        
+        alert("Database berhasil direfresh! Semua produk baru telah ditambahkan ke sistem.");
+    }
+    
+    // Beli kardus
+    document.getElementById('buyCardAction').onclick = () => {
+        const id = document.getElementById('productType').value;
+        const qty = parseInt(document.getElementById('cardAmount').value) || 1;
+        if(!PRODUCT_CATALOG[id]) {
+            alert("Produk tidak ditemukan!");
+            return;
+        }
+        const cost = PRODUCT_CATALOG[id].cost * qty;
+        if(playerMoney >= cost) {
+            playerMoney -= cost;
+            cardStock[id] = (cardStock[id] || 0) + qty;
+            updateUI();
+        } else alert("Uang tidak cukup!");
+    };
+    
+    // Upgrade toko dengan batas maksimal kapasitas 1.000.000.000
+    document.getElementById('upgradeBtn').onclick = () => {
+        if(maxCap >= 1000000000) {
+            alert("Kapasitas rak sudah mencapai maksimum 1.000.000.000!");
+            return;
+        }
+        const cost = storeLevel * 300;
+        if(playerMoney >= cost) {
+            playerMoney -= cost;
+            storeLevel++;
+            let newCap = maxCap + 15;
+            if(newCap > 1000000000) newCap = 1000000000;
+            maxCap = newCap;
+            updateUI();
+        } else {
+            alert("Uang tidak cukup untuk upgrade!");
+        }
+    };
+    
+    // Refresh Database Button
+    document.getElementById('refreshDatabaseBtn').onclick = () => {
+        if(confirm("Refresh database akan menambahkan semua produk baru ke sistem tanpa menghapus progress Anda. Lanjutkan?")) {
+            refreshDatabase();
+        }
+    };
+    
+    // Helper format money
+    function formatMoney(num) {
+        if (num >= 1e12) return (num / 1e12).toFixed(1) + 'T';
+        if (num >= 1e9) return (num / 1e9).toFixed(1) + 'B';
+        if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
+        if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+        return num.toFixed(2);
+    }
+    
+    // Inisialisasi Game
+    function initGameWithDatabase() {
+        initializeDynamicData();
+        const loaded = loadGameFromDB();
+        
+        clearAllTimers();
+        
+        if(!loaded) {
+            // Reset ke default jika tidak ada save
+            playerMoney = 5000.0;
+            storeLevel = 1;
+            maxCap = 20;
+            for(let id in cardStock) cardStock[id] = 0;
+            for(let id in shelf) {
+                shelf[id].stock = 0;
+                shelf[id].price = PRODUCT_CATALOG[id].base * 1.2;
+            }
+        }
+        
+        // Pastikan maxCap tidak melebihi batas
+        if(maxCap > 1000000000) maxCap = 1000000000;
+        
+        updateUI();
+        restartAllSelling();
+    }
+    
+    // Auto-save interval
+    setInterval(() => {
+        saveGameToDB();
+    }, 5000);
+    
+    window.addEventListener('beforeunload', () => {
+        saveGameToDB();
+    });
+    
+    // Jalankan game
+    initGameWithDatabase();
+</script>
+</body>
+</html>
